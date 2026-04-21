@@ -7,13 +7,13 @@ export interface ApkMeta {
   versionCode: number;
   /**
    * Human-readable app name from android:label.
-   * Falls back to packageName when the value is a resource reference
-   * that cannot be resolved without resources.arsc.
+   * Resolved from resources.arsc when the manifest value is a resource ID.
+   * Falls back to packageName only when resources.arsc is missing or unparseable.
    */
   label: string;
   /**
-   * True when android:label was a resource ID (e.g. @0x7F040001) that
-   * could not be resolved. `label` will equal `packageName` in this case.
+   * True when android:label was a resource ID that could not be resolved
+   * from resources.arsc. `label` will equal `packageName` in this case.
    */
   labelIsResourceId: boolean;
   /** File size in bytes */

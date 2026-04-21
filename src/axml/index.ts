@@ -8,6 +8,7 @@ export interface ManifestResult {
   versionCode: number;
   label: string;
   labelIsResourceId: boolean;
+  labelResourceId?: number;
 }
 
 const RES_XML_TYPE = 0x0003;
@@ -95,10 +96,14 @@ function processStartElement(
 
     const attrName = getString(strings, nameIdx);
     if (attrName) {
-      attrs[attrName] =
-        attrName === "versionCode"
-          ? parseVersionCode(strings, rawValueIdx, valueData)
-          : parseAttributeValue(strings, rawValueIdx, valueType, valueData);
+      if (attrName === "versionCode") {
+        attrs[attrName] = parseVersionCode(strings, rawValueIdx, valueData);
+      } else if (attrName === "label" && valueType === 0x01 /* TYPE_REFERENCE */) {
+        // Store as @0xXXXXXXXX so RESOURCE_ID_RE can detect it downstream
+        attrs[attrName] = `@0x${valueData.toString(16)}`;
+      } else {
+        attrs[attrName] = parseAttributeValue(strings, rawValueIdx, valueType, valueData);
+      }
     }
 
     attrCursor += attrSize;
@@ -116,6 +121,10 @@ function processStartElement(
     const raw = String(attrs.label);
     if (RESOURCE_ID_RE.test(raw)) {
       result.labelIsResourceId = true;
+      const hex = raw.slice(1); // strip @
+      result.labelResourceId = hex.startsWith("0x") || hex.startsWith("0X")
+        ? parseInt(hex.slice(2), 16)
+        : parseInt(hex, 10);
     } else {
       result.label = raw;
     }

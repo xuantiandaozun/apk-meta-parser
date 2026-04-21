@@ -1,8 +1,14 @@
 # apk-meta-parser
 
+[![npm version](https://img.shields.io/npm/v/apk-meta-parser)](https://www.npmjs.com/package/apk-meta-parser)
+[![npm downloads](https://img.shields.io/npm/dm/apk-meta-parser)](https://www.npmjs.com/package/apk-meta-parser)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/apk-meta-parser)](https://bundlephobia.com/package/apk-meta-parser)
+[![license](https://img.shields.io/npm/l/apk-meta-parser)](./LICENSE)
+[![CI](https://github.com/xuantiandaozun/apk-meta-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/xuantiandaozun/apk-meta-parser/actions/workflows/ci.yml)
+
 纯浏览器端 APK 元信息解析，无需服务端、无需 Node.js。
 
-通过解析 APK（ZIP 格式）内的 Android 二进制 XML（`AndroidManifest.xml`），提取 `packageName`、`versionName`、`versionCode`、`label`、文件大小和 MD5。
+通过解析 APK（ZIP 格式）内的 Android 二进制 XML（`AndroidManifest.xml`）并自动解析 `resources.arsc`，提取 `packageName`、`versionName`、`versionCode`、`label`、文件大小和 MD5。
 
 [English Documentation](./README.md)
 
@@ -113,7 +119,7 @@ try {
 
 | 问题 | 说明 |
 |------|------|
-| **label 为资源 ID** | 部分 APK 的 `android:label` 是 `@0x7F040001` 这样的资源引用，需解析 `resources.arsc` 才能拿到真实名称（本库暂不支持）。此时 `label` 回落为 `packageName`，`labelIsResourceId` 为 `true`。 |
+| **label 为资源 ID** | 部分 APK 的 `android:label` 是 `@0x7F040001` 这样的资源引用，本库会自动解析 `resources.arsc` 拿到真实名称。仅当解析失败（如 `resources.arsc` 缺失）时，`label` 才回落为 `packageName`，`labelIsResourceId` 为 `true`。 |
 | **大文件内存** | MD5 计算需将整个 APK 载入内存（`file.arrayBuffer()`）。200 MB 以上的 APK 在低端设备可能 OOM，建议使用 `skipMd5: true`。清单提取本身不需要全量读取。 |
 | **versionCode 超 32 位** | 已处理：解析器优先从字符串池中读取完整数字字符串，回退到 `getUint32`（无符号），可保留最大约 `2^53` 的精度。 |
 | **兜底准确率** | 二进制结构解析失败时，会用正则从字符串池启发式匹配包名、版本和应用名。结果可能不准确，建议开启 `partial: true` 并提示用户人工确认。 |

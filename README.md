@@ -1,8 +1,14 @@
 # apk-meta-parser
 
+[![npm version](https://img.shields.io/npm/v/apk-meta-parser)](https://www.npmjs.com/package/apk-meta-parser)
+[![npm downloads](https://img.shields.io/npm/dm/apk-meta-parser)](https://www.npmjs.com/package/apk-meta-parser)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/apk-meta-parser)](https://bundlephobia.com/package/apk-meta-parser)
+[![license](https://img.shields.io/npm/l/apk-meta-parser)](./LICENSE)
+[![CI](https://github.com/xuantiandaozun/apk-meta-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/xuantiandaozun/apk-meta-parser/actions/workflows/ci.yml)
+
 Parse APK metadata entirely in the browser — no server, no Node.js.
 
-Extracts `packageName`, `versionName`, `versionCode`, `label`, file size, and MD5 by decoding the Android binary XML (`AndroidManifest.xml`) inside the APK ZIP.
+Extracts `packageName`, `versionName`, `versionCode`, `label`, file size, and MD5 by decoding the Android binary XML (`AndroidManifest.xml`) and resolving resource IDs via `resources.arsc` inside the APK ZIP.
 
 [中文文档](./README.zh.md)
 
@@ -112,7 +118,7 @@ try {
 
 | Topic | Detail |
 |-------|--------|
-| **`label` as resource ID** | `android:label` is often a resource reference like `@0x7F040001`. Resolving it to a real string requires parsing `resources.arsc`, which is not implemented. When this happens, `label` falls back to `packageName` and `labelIsResourceId` is set to `true`. |
+| **`label` as resource ID** | `android:label` is often a resource reference like `@0x7F040001`. The parser resolves it automatically via `resources.arsc`. `labelIsResourceId` is only `true` when the lookup fails (e.g. `resources.arsc` is missing or the entry is absent). |
 | **Large APKs** | `file.arrayBuffer()` (needed for MD5) loads the entire APK into memory. For files > 200 MB on low-end devices, use `skipMd5: true`. The manifest extraction itself does not require a full read. |
 | **`versionCode` > 2³¹** | Handled: the parser first tries to read `versionCode` as a string from the string pool before falling back to `getUint32`, preserving values up to `Number.MAX_SAFE_INTEGER`. |
 | **Fallback accuracy** | When structured parsing fails, a heuristic scans the string pool to find package name, version, and label. Results may be inaccurate; use `partial: true` and prompt the user to verify. |

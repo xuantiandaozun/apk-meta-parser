@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-21
+
+### Added
+- Resolve `android:label` resource IDs via `resources.arsc` — APKs built with
+  uni-app and similar tools now return the real app name instead of falling back
+  to `packageName`. `labelIsResourceId` is only `true` when the lookup fails.
+
+### Fixed
+- `TYPE_REFERENCE` label attributes (value type `0x01`) were not detected as
+  resource IDs; they are now correctly formatted as `@0xXXXXXXXX` before lookup.
+
 ## [0.1.0] - 2026-04-21
 
 ### Added
@@ -25,5 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI (Node 18 / 20 / 22) and npm publish workflow
 - README in English and Chinese
 
-[Unreleased]: https://github.com/xuantiandaozun/apk-meta-parser/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/xuantiandaozun/apk-meta-parser/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/xuantiandaozun/apk-meta-parser/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/xuantiandaozun/apk-meta-parser/releases/tag/v0.1.0

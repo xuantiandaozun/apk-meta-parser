@@ -1,6 +1,6 @@
 {
   "name": "apk-meta-parser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Parse APK metadata in pure browser environment — packageName, versionName, versionCode, label, MD5 | 纯浏览器端 APK 元信息解析",
   "keywords": [
     "apk",

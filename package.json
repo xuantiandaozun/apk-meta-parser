@@ -1,0 +1,69 @@
+{
+  "name": "apk-meta-parser",
+  "version": "0.1.0",
+  "description": "Parse APK metadata in pure browser environment — packageName, versionName, versionCode, label, MD5 | 纯浏览器端 APK 元信息解析",
+  "keywords": [
+    "apk",
+    "android",
+    "manifest",
+    "axml",
+    "parser",
+    "browser",
+    "metadata",
+    "package-name",
+    "version"
+  ],
+  "license": "MIT",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xuantiandaozun/apk-meta-parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xuantiandaozun/apk-meta-parser/issues"
+  },
+  "homepage": "https://github.com/xuantiandaozun/apk-meta-parser#readme",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run test"
+  },
+  "peerDependencies": {
+    "jszip": ">=3.7.0",
+    "spark-md5": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@rollup/rollup-win32-x64-msvc": "^4.60.2",
+    "@types/spark-md5": "^3.0.4",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^9.0.0",
+    "happy-dom": "^14.0.0",
+    "jszip": "^3.10.1",
+    "spark-md5": "^3.0.2",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^2.0.0"
+  }
+}

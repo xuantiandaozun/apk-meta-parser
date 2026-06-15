@@ -8,3 +8,4 @@ Disallow: /node_modules/
 Disallow: /.github/
 
 Sitemap: https://apk.zhoudw.vip/sitemap.xml
+Sitemap: https://apk.zhoudw.vip/demo/sitemap.xml

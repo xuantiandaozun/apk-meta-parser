@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /demo/
+
+Sitemap: https://apk.zhoudw.vip/sitemap.xml

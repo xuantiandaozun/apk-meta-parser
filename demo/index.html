@@ -125,6 +125,45 @@
         text-decoration: underline;
       }
 
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-shrink: 0;
+      }
+
+      .lang-switch {
+        display: inline-flex;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+      }
+
+      .lang-btn {
+        min-width: 44px;
+        padding: 6px 10px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          background 140ms ease,
+          color 140ms ease;
+      }
+
+      .lang-btn:hover {
+        color: var(--text);
+      }
+
+      .lang-btn.is-active {
+        background: #e8f5f2;
+        color: var(--accent-dark);
+      }
+
       .workspace {
         display: grid;
         grid-template-columns: minmax(310px, 0.95fr) minmax(420px, 1.35fr);
@@ -425,6 +464,11 @@
           gap: 12px;
         }
 
+        .topbar-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
         .workspace {
           display: grid;
         }
@@ -494,14 +538,20 @@
           </div>
           <div>
             <h1>APK Lens</h1>
-            <p class="tagline">Browser-based APK metadata inspector</p>
+            <p class="tagline" data-i18n="tagline">Browser-based APK metadata inspector</p>
           </div>
         </div>
-        <a class="github-link" href="../README.md">apk-meta-parser</a>
+        <div class="topbar-actions">
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button class="lang-btn is-active" type="button" data-lang="en">EN</button>
+            <button class="lang-btn" type="button" data-lang="zh">中文</button>
+          </div>
+          <a class="github-link" id="githubLink" href="../README.md">apk-meta-parser</a>
+        </div>
       </header>
 
       <section class="workspace">
-        <section class="panel drop-panel" aria-label="APK input">
+        <section class="panel drop-panel" id="dropPanel" aria-label="APK input">
           <label class="dropzone" id="dropzone">
             <input class="file-input" id="fileInput" type="file" accept=".apk,application/vnd.android.package-archive" />
             <span class="drop-content">
@@ -509,8 +559,8 @@
                 <span class="lens-line"></span>
               </span>
               <span>
-                <span class="drop-title">Drop an APK here</span>
-                <span class="drop-subtitle">
+                <span class="drop-title" data-i18n="dropTitle">Drop an APK here</span>
+                <span class="drop-subtitle" data-i18n="dropSubtitle">
                   Package metadata stays local in this browser tab.
                 </span>
               </span>
@@ -519,27 +569,20 @@
 
           <div class="actions">
             <label class="toggle">
-              <span>Skip MD5</span>
+              <span data-i18n="skipMd5">Skip MD5</span>
               <input id="skipMd5" type="checkbox" />
             </label>
             <label class="toggle">
-              <span>Partial mode</span>
+              <span data-i18n="partialMode">Partial mode</span>
               <input id="partial" type="checkbox" checked />
             </label>
           </div>
 
-          <div class="status" id="status" role="status">Ready</div>
+          <div class="status" id="status" role="status" data-i18n="ready">Ready</div>
         </section>
 
-        <section class="panel result-panel" aria-label="APK metadata">
-          <div id="result">
-            <div class="empty">
-              <p>
-                <strong>No APK selected</strong>
-                Results will appear here after parsing.
-              </p>
-            </div>
-          </div>
+        <section class="panel result-panel" id="resultPanel" aria-label="APK metadata">
+          <div id="result"></div>
         </section>
       </section>
     </main>
@@ -547,22 +590,149 @@
     <script type="module">
       import { parseApkMeta } from "../dist/index.mjs?v=extended-meta-20260615";
 
+      const LOCALE_KEY = "apk-lens-locale";
+
+      const I18N = {
+        en: {
+          tagline: "Browser-based APK metadata inspector",
+          dropTitle: "Drop an APK here",
+          dropSubtitle: "Package metadata stays local in this browser tab.",
+          skipMd5: "Skip MD5",
+          partialMode: "Partial mode",
+          ready: "Ready",
+          emptyTitle: "No APK selected",
+          emptyHint: "Results will appear here after parsing.",
+          parsing: (name) => `Parsing ${name}...`,
+          parsed: (name) => `Parsed ${name}`,
+          parseFailed: "Failed to parse APK",
+          apkInput: "APK input",
+          apkMetadata: "APK metadata",
+          language: "Language",
+          version: "Version",
+          versionCode: "Version Code",
+          size: "Size",
+          packageName: "Package Name",
+          appLabel: "App Label",
+          labelStatus: "Label Status",
+          labelUnresolved: "Resource ID unresolved, using package name",
+          labelResolved: "Resolved",
+          minSdk: "Min SDK",
+          targetSdk: "Target SDK",
+          mainActivity: "Main Activity",
+          permissions: "Permissions",
+          apkMd5: "APK MD5",
+          skipped: "Skipped",
+          badgeUnresolved: "Label unresolved",
+          badgeParsed: "Parsed",
+          readme: "../README.md",
+        },
+        zh: {
+          tagline: "纯浏览器端 APK 元信息检查器",
+          dropTitle: "将 APK 拖放到此处",
+          dropSubtitle: "包元数据仅在当前浏览器标签页内本地解析。",
+          skipMd5: "跳过 MD5",
+          partialMode: "部分模式",
+          ready: "就绪",
+          emptyTitle: "未选择 APK",
+          emptyHint: "解析后将在此显示结果。",
+          parsing: (name) => `正在解析 ${name}...`,
+          parsed: (name) => `已解析 ${name}`,
+          parseFailed: "APK 解析失败",
+          apkInput: "APK 输入",
+          apkMetadata: "APK 元数据",
+          language: "语言",
+          version: "版本",
+          versionCode: "版本号",
+          size: "大小",
+          packageName: "包名",
+          appLabel: "应用名称",
+          labelStatus: "名称状态",
+          labelUnresolved: "资源 ID 未解析，已回退为包名",
+          labelResolved: "已解析",
+          minSdk: "最低 SDK",
+          targetSdk: "目标 SDK",
+          mainActivity: "启动 Activity",
+          permissions: "权限",
+          apkMd5: "APK MD5",
+          skipped: "已跳过",
+          badgeUnresolved: "名称未解析",
+          badgeParsed: "已解析",
+          readme: "../README.zh.md",
+        },
+      };
+
       const dropzone = document.querySelector("#dropzone");
       const fileInput = document.querySelector("#fileInput");
       const skipMd5 = document.querySelector("#skipMd5");
       const partial = document.querySelector("#partial");
       const status = document.querySelector("#status");
       const result = document.querySelector("#result");
+      const dropPanel = document.querySelector("#dropPanel");
+      const resultPanel = document.querySelector("#resultPanel");
+      const githubLink = document.querySelector("#githubLink");
+      const langButtons = document.querySelectorAll(".lang-btn");
 
-      function setStatus(text, tone = "neutral") {
-        status.textContent = text;
-        status.classList.toggle("is-error", tone === "error");
-        status.classList.toggle("is-ok", tone === "ok");
+      let locale = "en";
+      let currentMeta = null;
+      let lastFile = null;
+      let statusTone = "neutral";
+      let statusKey = "ready";
+      let statusArg = null;
+
+      function t(key, arg) {
+        const value = I18N[locale][key];
+        return typeof value === "function" ? value(arg) : value;
+      }
+
+      function setLocale(nextLocale) {
+        if (!I18N[nextLocale]) return;
+        locale = nextLocale;
+        localStorage.setItem(LOCALE_KEY, locale);
+        document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+        document.title = locale === "zh" ? "APK Lens - APK 元信息检查器" : "APK Lens";
+        document.querySelector('meta[name="description"]').setAttribute(
+          "content",
+          locale === "zh"
+            ? "在浏览器中直接检查 APK 包元数据。"
+            : "Inspect APK package metadata directly in your browser."
+        );
+        applyStaticLocale();
+        renderEmpty();
+        if (currentMeta) renderMeta(currentMeta);
+        refreshStatus();
+        langButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.lang === locale);
+        });
+      }
+
+      function applyStaticLocale() {
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+          const key = element.dataset.i18n;
+          if (key === "ready" && statusKey !== "ready") return;
+          element.textContent = t(key);
+        });
+        dropPanel.setAttribute("aria-label", t("apkInput"));
+        resultPanel.setAttribute("aria-label", t("apkMetadata"));
+        document.querySelector(".lang-switch").setAttribute("aria-label", t("language"));
+        githubLink.href = t("readme");
+      }
+
+      function setStatusByKey(key, tone = "neutral", arg = null) {
+        statusKey = key;
+        statusTone = tone;
+        statusArg = arg;
+        refreshStatus();
+      }
+
+      function refreshStatus() {
+        status.textContent = statusArg == null ? t(statusKey) : t(statusKey, statusArg);
+        status.classList.toggle("is-error", statusTone === "error");
+        status.classList.toggle("is-ok", statusTone === "ok");
       }
 
       function formatBytes(bytes) {
         if (!Number.isFinite(bytes)) return "-";
-        const units = ["B", "KB", "MB", "GB"];
+        const units = locale === "zh" ? ["B", "KB", "MB", "GB"] : ["B", "KB", "MB", "GB"];
         let value = bytes;
         let unitIndex = 0;
         while (value >= 1024 && unitIndex < units.length - 1) {
@@ -600,8 +770,20 @@
 
         return `
           <div class="field">
-            <div class="field-label">Permissions</div>
+            <div class="field-label">${escapeHtml(t("permissions"))}</div>
             <div class="permissions">${chips}</div>
+          </div>
+        `;
+      }
+
+      function renderEmpty() {
+        if (currentMeta) return;
+        result.innerHTML = `
+          <div class="empty">
+            <p>
+              <strong>${escapeHtml(t("emptyTitle"))}</strong>
+              ${escapeHtml(t("emptyHint"))}
+            </p>
           </div>
         `;
       }
@@ -610,56 +792,72 @@
         result.innerHTML = `
           <div class="result-head">
             <h2 class="result-title">${escapeHtml(meta.label || meta.packageName || "APK")}</h2>
-            <div class="badge">${meta.labelIsResourceId ? "Label unresolved" : "Parsed"}</div>
+            <div class="badge">${meta.labelIsResourceId ? escapeHtml(t("badgeUnresolved")) : escapeHtml(t("badgeParsed"))}</div>
           </div>
           <div class="summary">
             <div class="metric">
-              <div class="metric-label">Version</div>
+              <div class="metric-label">${escapeHtml(t("version"))}</div>
               <div class="metric-value">${escapeHtml(meta.versionName || "-")}</div>
             </div>
             <div class="metric">
-              <div class="metric-label">Version Code</div>
+              <div class="metric-label">${escapeHtml(t("versionCode"))}</div>
               <div class="metric-value">${escapeHtml(meta.versionCode || "-")}</div>
             </div>
             <div class="metric">
-              <div class="metric-label">Size</div>
+              <div class="metric-label">${escapeHtml(t("size"))}</div>
               <div class="metric-value">${escapeHtml(formatBytes(meta.apkSize))}</div>
             </div>
           </div>
           <div class="fields">
-            ${field("Package Name", meta.packageName)}
-            ${field("App Label", meta.label)}
+            ${field(t("packageName"), meta.packageName)}
+            ${field(t("appLabel"), meta.label)}
             ${field(
-              "Label Status",
-              meta.labelIsResourceId
-                ? "Resource ID unresolved, using package name"
-                : "Resolved"
+              t("labelStatus"),
+              meta.labelIsResourceId ? t("labelUnresolved") : t("labelResolved")
             )}
-            ${field("Min SDK", meta.minSdkVersion)}
-            ${field("Target SDK", meta.targetSdkVersion)}
-            ${field("Main Activity", meta.mainActivity)}
+            ${field(t("minSdk"), meta.minSdkVersion)}
+            ${field(t("targetSdk"), meta.targetSdkVersion)}
+            ${field(t("mainActivity"), meta.mainActivity)}
             ${permissionField(meta.permissions)}
-            ${field("APK MD5", meta.apkMd5 || "Skipped")}
+            ${field(t("apkMd5"), meta.apkMd5 || t("skipped"))}
           </div>
         `;
       }
 
       async function inspectFile(file) {
         if (!file) return;
-        setStatus(`Parsing ${file.name}...`);
+        lastFile = file;
+        setStatusByKey("parsing", "neutral", file.name);
         try {
           const meta = await parseApkMeta(file, {
             skipMd5: skipMd5.checked,
             partial: partial.checked,
-            locale: "en",
+            locale,
           });
+          currentMeta = meta;
           renderMeta(meta);
-          setStatus(`Parsed ${file.name}`, "ok");
+          setStatusByKey("parsed", "ok", file.name);
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Failed to parse APK";
-          setStatus(message, "error");
+          currentMeta = null;
+          renderEmpty();
+          const message = error instanceof Error ? error.message : t("parseFailed");
+          statusKey = "custom";
+          statusTone = "error";
+          statusArg = null;
+          status.textContent = message;
+          status.classList.toggle("is-error", true);
+          status.classList.toggle("is-ok", false);
         }
       }
+
+      langButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setLocale(button.dataset.lang);
+          if (lastFile && statusTone === "error") {
+            inspectFile(lastFile);
+          }
+        });
+      });
 
       fileInput.addEventListener("change", () => {
         inspectFile(fileInput.files?.[0]);
@@ -680,6 +878,9 @@
         const file = event.dataTransfer?.files?.[0];
         if (file) inspectFile(file);
       });
+
+      const savedLocale = localStorage.getItem(LOCALE_KEY);
+      setLocale(savedLocale === "zh" ? "zh" : "en");
     </script>
   </body>
 </html>

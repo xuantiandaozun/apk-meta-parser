@@ -2,7 +2,7 @@
 
 纯浏览器端 APK 元信息解析，无需服务端、无需 Node.js。
 
-通过解析 APK（ZIP 格式）内的 Android 二进制 XML（`AndroidManifest.xml`），提取 `packageName`、`versionName`、`versionCode`、`label`、文件大小和 MD5。
+通过解析 APK（ZIP 格式）内的 Android 二进制 XML（`AndroidManifest.xml`），提取 `packageName`、`versionName`、`versionCode`、`label`、SDK 版本、权限、启动 Activity、文件大小和 MD5。
 
 [English Documentation](./README.md)
 
@@ -91,6 +91,10 @@ async function onFileChange(event) {
 | `versionCode` | `number` | 版本号，如 `123` |
 | `label` | `string` | 应用名称。无法解析时回落为 `packageName`。 |
 | `labelIsResourceId` | `boolean` | 为 `true` 时表示 `android:label` 是资源引用（如 `@0x7F04xxxx`），未能解析为真实字符串。 |
+| `minSdkVersion` | `number \| undefined` | `uses-sdk` 声明的最低 Android SDK。 |
+| `targetSdkVersion` | `number \| undefined` | `uses-sdk` 声明的目标 Android SDK。 |
+| `permissions` | `string[]` | `uses-permission` 声明的权限名。 |
+| `mainActivity` | `string` | 尽力识别出的启动 Activity 类名。 |
 | `apkSize` | `number` | 文件大小（字节）。 |
 | `apkMd5` | `string` | MD5 十六进制字符串。`skipMd5` 为 `true` 时为空字符串。 |
 
@@ -133,7 +137,7 @@ try {
 
 | 问题 | 说明 |
 |------|------|
-| **label 为资源 ID** | 部分 APK 的 `android:label` 是 `@0x7F040001` 这样的资源引用，需解析 `resources.arsc` 才能拿到真实名称（本库暂不支持）。此时 `label` 回落为 `packageName`，`labelIsResourceId` 为 `true`。 |
+| **label 为资源 ID** | 部分 APK 的 `android:label` 是 `@0x7F040001` 这样的资源引用。解析器会尝试从 `resources.arsc` 解析简单字符串值；如果无法解析，`label` 回落为 `packageName`，`labelIsResourceId` 为 `true`。 |
 | **大文件内存** | MD5 计算需将整个 APK 载入内存（`file.arrayBuffer()`）。200 MB 以上的 APK 在低端设备可能 OOM，建议使用 `skipMd5: true`。清单提取本身不需要全量读取。 |
 | **versionCode 超 32 位** | 已处理：解析器优先从字符串池中读取完整数字字符串，回退到 `getUint32`（无符号），可保留最大约 `2^53` 的精度。 |
 | **兜底准确率** | 二进制结构解析失败时，会用正则从字符串池启发式匹配包名、版本和应用名。结果可能不准确，建议开启 `partial: true` 并提示用户人工确认。 |

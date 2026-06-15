@@ -2,7 +2,7 @@
 
 Parse APK metadata entirely in the browser — no server, no Node.js.
 
-Extracts `packageName`, `versionName`, `versionCode`, `label`, file size, and MD5 by decoding the Android binary XML (`AndroidManifest.xml`) inside the APK ZIP.
+Extracts `packageName`, `versionName`, `versionCode`, `label`, SDK versions, permissions, launcher activity, file size, and MD5 by decoding the Android binary XML (`AndroidManifest.xml`) inside the APK ZIP.
 
 [中文文档](./README.zh.md)
 
@@ -91,6 +91,10 @@ Returns `Promise<ApkMeta>`.
 | `versionCode` | `number` | e.g. `123` |
 | `label` | `string` | Human-readable app name. Falls back to `packageName` when it cannot be resolved. |
 | `labelIsResourceId` | `boolean` | `true` when `android:label` is a resource reference (`@0x7F04xxxx`) that cannot be resolved without `resources.arsc`. |
+| `minSdkVersion` | `number \| undefined` | Minimum Android SDK declared by `uses-sdk`. |
+| `targetSdkVersion` | `number \| undefined` | Target Android SDK declared by `uses-sdk`. |
+| `permissions` | `string[]` | Permission names declared by `uses-permission`. |
+| `mainActivity` | `string` | Best-effort launcher activity class name. |
 | `apkSize` | `number` | File size in bytes. |
 | `apkMd5` | `string` | MD5 hex digest. Empty string when `skipMd5` is `true`. |
 
@@ -132,7 +136,7 @@ try {
 
 | Topic | Detail |
 |-------|--------|
-| **`label` as resource ID** | `android:label` is often a resource reference like `@0x7F040001`. Resolving it to a real string requires parsing `resources.arsc`, which is not implemented. When this happens, `label` falls back to `packageName` and `labelIsResourceId` is set to `true`. |
+| **`label` as resource ID** | `android:label` is often a resource reference like `@0x7F040001`. The parser tries to resolve simple string values from `resources.arsc`. When it cannot resolve the resource, `label` falls back to `packageName` and `labelIsResourceId` is set to `true`. |
 | **Large APKs** | `file.arrayBuffer()` (needed for MD5) loads the entire APK into memory. For files > 200 MB on low-end devices, use `skipMd5: true`. The manifest extraction itself does not require a full read. |
 | **`versionCode` > 2³¹** | Handled: the parser first tries to read `versionCode` as a string from the string pool before falling back to `getUint32`, preserving values up to `Number.MAX_SAFE_INTEGER`. |
 | **Fallback accuracy** | When structured parsing fails, a heuristic scans the string pool to find package name, version, and label. Results may be inaccurate; use `partial: true` and prompt the user to verify. |

@@ -352,6 +352,25 @@
         gap: 0;
       }
 
+      .permissions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .permission-chip {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        padding: 5px 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #263244;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+      }
+
       .field {
         display: grid;
         grid-template-columns: 170px minmax(0, 1fr);
@@ -571,6 +590,22 @@
         `;
       }
 
+      function permissionField(permissions) {
+        const items = Array.isArray(permissions) ? permissions : [];
+        const chips = items.length
+          ? items
+              .map((permission) => `<span class="permission-chip">${escapeHtml(permission)}</span>`)
+              .join("")
+          : '<span class="field-value">-</span>';
+
+        return `
+          <div class="field">
+            <div class="field-label">Permissions</div>
+            <div class="permissions">${chips}</div>
+          </div>
+        `;
+      }
+
       function renderMeta(meta) {
         result.innerHTML = `
           <div class="result-head">
@@ -594,7 +629,16 @@
           <div class="fields">
             ${field("Package Name", meta.packageName)}
             ${field("App Label", meta.label)}
-            ${field("Label Resource ID", meta.labelIsResourceId ? "Yes" : "No")}
+            ${field(
+              "Label Status",
+              meta.labelIsResourceId
+                ? "Resource ID unresolved, using package name"
+                : "Resolved"
+            )}
+            ${field("Min SDK", meta.minSdkVersion)}
+            ${field("Target SDK", meta.targetSdkVersion)}
+            ${field("Main Activity", meta.mainActivity)}
+            ${permissionField(meta.permissions)}
             ${field("APK MD5", meta.apkMd5 || "Skipped")}
           </div>
         `;

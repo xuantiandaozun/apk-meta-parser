@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import SparkMD5 from "spark-md5";
 import { parseAndroidBinaryXml } from "./axml/index";
+import { resolveStringResource } from "./arsc";
 import { ApkParseError } from "./errors";
 import type { ApkMeta, ParseOptions } from "./types";
 
@@ -47,8 +48,26 @@ export async function parseApkMeta(
   const packageName = manifest.package || "";
   const versionName = manifest.versionName || "";
   const versionCode = manifest.versionCode || 0;
-  const labelIsResourceId = manifest.labelIsResourceId;
-  const label = manifest.label || packageName;
+  let labelIsResourceId = manifest.labelIsResourceId;
+  let label = manifest.label;
+
+  if (labelIsResourceId && manifest.labelResourceId !== undefined) {
+    const arscEntry = zip.file("resources.arsc");
+    if (arscEntry) {
+      try {
+        const arscData = await arscEntry.async("uint8array");
+        const resolved = resolveStringResource(arscData, manifest.labelResourceId);
+        if (resolved) {
+          label = resolved;
+          labelIsResourceId = false;
+        }
+      } catch {
+        // Keep the packageName fallback below.
+      }
+    }
+  }
+
+  label = label || packageName;
 
   if (!partial && (!packageName || !versionName || !versionCode)) {
     throw new ApkParseError("INCOMPLETE_MANIFEST", locale);
@@ -65,6 +84,10 @@ export async function parseApkMeta(
     versionCode,
     label,
     labelIsResourceId,
+    minSdkVersion: manifest.minSdkVersion,
+    targetSdkVersion: manifest.targetSdkVersion,
+    permissions: manifest.permissions,
+    mainActivity: manifest.mainActivity,
     apkSize: file.size,
     apkMd5,
   };

@@ -9,6 +9,9 @@ function makeResult(overrides: Partial<ManifestResult> = {}): ManifestResult {
     versionCode: 0,
     label: "",
     labelIsResourceId: false,
+    permissions: [],
+    activities: [],
+    mainActivity: "",
     ...overrides,
   };
 }

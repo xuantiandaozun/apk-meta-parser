@@ -29,6 +29,11 @@ vi.mock("../src/axml/index", () => ({
     versionCode: 123,
     label: "Example App",
     labelIsResourceId: false,
+    minSdkVersion: 23,
+    targetSdkVersion: 35,
+    permissions: ["android.permission.INTERNET"],
+    activities: ["com.example.app.MainActivity"],
+    mainActivity: "com.example.app.MainActivity",
   }),
 }));
 
@@ -64,6 +69,10 @@ describe("parseApkMeta", () => {
     expect(meta.versionCode).toBe(123);
     expect(meta.label).toBe("Example App");
     expect(meta.labelIsResourceId).toBe(false);
+    expect(meta.minSdkVersion).toBe(23);
+    expect(meta.targetSdkVersion).toBe(35);
+    expect(meta.permissions).toEqual(["android.permission.INTERNET"]);
+    expect(meta.mainActivity).toBe("com.example.app.MainActivity");
     expect(meta.apkSize).toBe(blob.size);
     expect(meta.apkMd5).toBe("d41d8cd98f00b204e9800998ecf8427e");
   });
@@ -115,6 +124,9 @@ describe("parseApkMeta", () => {
         versionCode: 0,
         label: "",
         labelIsResourceId: false,
+        permissions: [],
+        activities: [],
+        mainActivity: "",
       }),
     }));
     setupZipMock();

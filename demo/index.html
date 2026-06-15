@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>APK Lens</title>
+    <meta
+      name="description"
+      content="Inspect APK package metadata directly in your browser."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23e8f5f2'/%3E%3Ccircle cx='14' cy='14' r='7' fill='none' stroke='%230f766e' stroke-width='3'/%3E%3Cpath d='M20 20l6 6' stroke='%230f766e' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "jszip": "https://esm.sh/jszip@3.10.1",
+          "spark-md5": "https://esm.sh/spark-md5@3.0.2"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --panel: #ffffff;
+        --panel-2: #f0f3f8;
+        --text: #18202f;
+        --muted: #687385;
+        --line: #d9dee8;
+        --accent: #0f766e;
+        --accent-dark: #115e59;
+        --danger: #b42318;
+        --danger-bg: #fff0ed;
+        --ok-bg: #eaf7f3;
+        --shadow: 0 22px 70px rgba(24, 32, 47, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        background:
+          linear-gradient(120deg, rgba(15, 118, 110, 0.09), transparent 34rem),
+          var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .app {
+        width: min(1120px, calc(100% - 32px));
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 28px 0 34px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 26px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border: 1px solid rgba(15, 118, 110, 0.22);
+        border-radius: 8px;
+        background: #e8f5f2;
+        box-shadow: 0 10px 26px rgba(15, 118, 110, 0.16);
+      }
+
+      .brand-mark svg {
+        width: 27px;
+        height: 27px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 25px;
+        line-height: 1.12;
+        letter-spacing: 0;
+      }
+
+      .tagline {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .github-link {
+        color: var(--accent-dark);
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .github-link:hover {
+        text-decoration: underline;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(310px, 0.95fr) minmax(420px, 1.35fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: var(--shadow);
+      }
+
+      .drop-panel {
+        padding: 18px;
+      }
+
+      .dropzone {
+        display: grid;
+        min-height: 288px;
+        place-items: center;
+        border: 1.5px dashed #aab6c8;
+        border-radius: 8px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(240, 243, 248, 0.78)),
+          var(--panel-2);
+        cursor: pointer;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .dropzone:hover,
+      .dropzone.is-dragging {
+        border-color: var(--accent);
+        background: #edf8f5;
+        transform: translateY(-1px);
+      }
+
+      .drop-content {
+        display: grid;
+        gap: 16px;
+        justify-items: center;
+        padding: 22px;
+        text-align: center;
+      }
+
+      .file-visual {
+        position: relative;
+        width: 86px;
+        height: 104px;
+        border: 1px solid #bcc8d9;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #ffffff, #eef3f7);
+        box-shadow: 0 16px 34px rgba(24, 32, 47, 0.13);
+      }
+
+      .file-visual::before {
+        position: absolute;
+        top: -1px;
+        right: -1px;
+        width: 24px;
+        height: 24px;
+        border-bottom: 1px solid #bcc8d9;
+        border-left: 1px solid #bcc8d9;
+        border-radius: 0 8px 0 7px;
+        background: #dfe9f0;
+        content: "";
+      }
+
+      .file-visual::after {
+        position: absolute;
+        inset: 30px 17px 28px;
+        border: 3px solid var(--accent);
+        border-radius: 50%;
+        content: "";
+      }
+
+      .lens-line {
+        position: absolute;
+        right: 17px;
+        bottom: 27px;
+        width: 22px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--accent);
+        transform: rotate(45deg);
+        transform-origin: right center;
+      }
+
+      .drop-title {
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .drop-subtitle {
+        max-width: 310px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        clip-path: inset(50%);
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 46px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .toggle input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+
+      .status {
+        min-height: 44px;
+        margin-top: 14px;
+        padding: 11px 13px;
+        border-radius: 8px;
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .status.is-error {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+
+      .status.is-ok {
+        background: var(--ok-bg);
+        color: var(--accent-dark);
+      }
+
+      .result-panel {
+        overflow: hidden;
+      }
+
+      .result-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .result-title {
+        font-size: 17px;
+      }
+
+      .badge {
+        max-width: 210px;
+        overflow: hidden;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e8f5f2;
+        color: var(--accent-dark);
+        font-size: 12px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric {
+        min-width: 0;
+        padding: 16px 18px;
+        border-right: 1px solid var(--line);
+      }
+
+      .metric:last-child {
+        border-right: 0;
+      }
+
+      .metric-label,
+      .field-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin-top: 5px;
+        overflow-wrap: anywhere;
+        font-size: 19px;
+        font-weight: 800;
+      }
+
+      .fields {
+        display: grid;
+        gap: 0;
+      }
+
+      .field {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .field:last-child {
+        border-bottom: 0;
+      }
+
+      .field-value {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: #263244;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 13px;
+      }
+
+      .empty {
+        display: grid;
+        min-height: 438px;
+        place-items: center;
+        padding: 32px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .empty strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+        font-size: 18px;
+      }
+
+      @media (max-width: 840px) {
+        .app {
+          width: min(100% - 24px, 680px);
+          padding-top: 18px;
+        }
+
+        .topbar,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .workspace {
+          display: grid;
+        }
+
+        .summary {
+          grid-template-columns: 1fr;
+        }
+
+        .metric {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .metric:last-child {
+          border-bottom: 0;
+        }
+
+        .field {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .actions {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 22px;
+        }
+
+        .dropzone {
+          min-height: 250px;
+        }
+
+        .result-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .badge {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path
+                d="M14.4 22.4a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"
+                stroke="#0f766e"
+                stroke-width="3"
+              />
+              <path
+                d="m20.4 20.4 5.2 5.2"
+                stroke="#0f766e"
+                stroke-linecap="round"
+                stroke-width="3"
+              />
+              <path d="M10.8 13.8h7.2M10.8 17h5.8" stroke="#18202f" stroke-width="2" />
+            </svg>
+          </div>
+          <div>
+            <h1>APK Lens</h1>
+            <p class="tagline">Browser-based APK metadata inspector</p>
+          </div>
+        </div>
+        <a class="github-link" href="../README.md">apk-meta-parser</a>
+      </header>
+
+      <section class="workspace">
+        <section class="panel drop-panel" aria-label="APK input">
+          <label class="dropzone" id="dropzone">
+            <input class="file-input" id="fileInput" type="file" accept=".apk,application/vnd.android.package-archive" />
+            <span class="drop-content">
+              <span class="file-visual" aria-hidden="true">
+                <span class="lens-line"></span>
+              </span>
+              <span>
+                <span class="drop-title">Drop an APK here</span>
+                <span class="drop-subtitle">
+                  Package metadata stays local in this browser tab.
+                </span>
+              </span>
+            </span>
+          </label>
+
+          <div class="actions">
+            <label class="toggle">
+              <span>Skip MD5</span>
+              <input id="skipMd5" type="checkbox" />
+            </label>
+            <label class="toggle">
+              <span>Partial mode</span>
+              <input id="partial" type="checkbox" checked />
+            </label>
+          </div>
+
+          <div class="status" id="status" role="status">Ready</div>
+        </section>
+
+        <section class="panel result-panel" aria-label="APK metadata">
+          <div id="result">
+            <div class="empty">
+              <p>
+                <strong>No APK selected</strong>
+                Results will appear here after parsing.
+              </p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module">
+      import { parseApkMeta } from "../dist/index.mjs";
+
+      const dropzone = document.querySelector("#dropzone");
+      const fileInput = document.querySelector("#fileInput");
+      const skipMd5 = document.querySelector("#skipMd5");
+      const partial = document.querySelector("#partial");
+      const status = document.querySelector("#status");
+      const result = document.querySelector("#result");
+
+      function setStatus(text, tone = "neutral") {
+        status.textContent = text;
+        status.classList.toggle("is-error", tone === "error");
+        status.classList.toggle("is-ok", tone === "ok");
+      }
+
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes)) return "-";
+        const units = ["B", "KB", "MB", "GB"];
+        let value = bytes;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+          value /= 1024;
+          unitIndex += 1;
+        }
+        return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function field(label, value) {
+        return `
+          <div class="field">
+            <div class="field-label">${escapeHtml(label)}</div>
+            <div class="field-value">${escapeHtml(value || "-")}</div>
+          </div>
+        `;
+      }
+
+      function renderMeta(meta) {
+        result.innerHTML = `
+          <div class="result-head">
+            <h2 class="result-title">${escapeHtml(meta.label || meta.packageName || "APK")}</h2>
+            <div class="badge">${meta.labelIsResourceId ? "Label unresolved" : "Parsed"}</div>
+          </div>
+          <div class="summary">
+            <div class="metric">
+              <div class="metric-label">Version</div>
+              <div class="metric-value">${escapeHtml(meta.versionName || "-")}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Version Code</div>
+              <div class="metric-value">${escapeHtml(meta.versionCode || "-")}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Size</div>
+              <div class="metric-value">${escapeHtml(formatBytes(meta.apkSize))}</div>
+            </div>
+          </div>
+          <div class="fields">
+            ${field("Package Name", meta.packageName)}
+            ${field("App Label", meta.label)}
+            ${field("Label Resource ID", meta.labelIsResourceId ? "Yes" : "No")}
+            ${field("APK MD5", meta.apkMd5 || "Skipped")}
+          </div>
+        `;
+      }
+
+      async function inspectFile(file) {
+        if (!file) return;
+        setStatus(`Parsing ${file.name}...`);
+        try {
+          const meta = await parseApkMeta(file, {
+            skipMd5: skipMd5.checked,
+            partial: partial.checked,
+            locale: "en",
+          });
+          renderMeta(meta);
+          setStatus(`Parsed ${file.name}`, "ok");
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Failed to parse APK";
+          setStatus(message, "error");
+        }
+      }
+
+      fileInput.addEventListener("change", () => {
+        inspectFile(fileInput.files?.[0]);
+      });
+
+      dropzone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropzone.classList.add("is-dragging");
+      });
+
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("is-dragging");
+      });
+
+      dropzone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("is-dragging");
+        const file = event.dataTransfer?.files?.[0];
+        if (file) inspectFile(file);
+      });
+    </script>
+  </body>
+</html>

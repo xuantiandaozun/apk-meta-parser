@@ -8,6 +8,26 @@
 
 ---
 
+## APK Lens Demo
+
+在线体验 APK Lens：
+
+https://xuantiandaozun.github.io/apk-meta-parser/demo/
+
+`demo/index.html` 也提供了一个浏览器端界面，可在本地直接体验解析效果。
+
+```bash
+npm run build
+python -m http.server 4173
+```
+
+然后打开 `http://localhost:4173/demo/`。
+
+Demo 会从本地 `dist/index.mjs` 导入解析库，并通过 import map 加载
+`jszip` / `spark-md5`。
+
+---
+
 ## 安装
 
 ```bash

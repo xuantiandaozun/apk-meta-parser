@@ -8,6 +8,26 @@ Extracts `packageName`, `versionName`, `versionCode`, `label`, file size, and MD
 
 ---
 
+## APK Lens Demo
+
+Try APK Lens online:
+
+https://xuantiandaozun.github.io/apk-meta-parser/demo/
+
+`demo/index.html` also provides a browser UI for trying the parser locally.
+
+```bash
+npm run build
+python -m http.server 4173
+```
+
+Then open `http://localhost:4173/demo/`.
+
+The demo imports the local build from `dist/index.mjs` and loads `jszip` /
+`spark-md5` through an import map.
+
+---
+
 ## Install
 
 ```bash

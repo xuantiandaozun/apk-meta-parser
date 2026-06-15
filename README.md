@@ -12,7 +12,7 @@ Extracts `packageName`, `versionName`, `versionCode`, `label`, SDK versions, per
 
 Try APK Lens online:
 
-https://xuantiandaozun.github.io/apk-meta-parser/demo/
+https://apk.zhoudw.vip/demo/
 
 `demo/index.html` also provides a browser UI for trying the parser locally.
 

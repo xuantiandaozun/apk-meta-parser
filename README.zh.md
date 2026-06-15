@@ -12,7 +12,7 @@
 
 在线体验 APK Lens：
 
-https://xuantiandaozun.github.io/apk-meta-parser/demo/
+https://apk.zhoudw.vip/demo/
 
 `demo/index.html` 也提供了一个浏览器端界面，可在本地直接体验解析效果。
 

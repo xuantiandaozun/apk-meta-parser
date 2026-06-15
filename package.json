@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/xuantiandaozun/apk-meta-parser/issues"
   },
-  "homepage": "https://github.com/xuantiandaozun/apk-meta-parser#readme",
+  "homepage": "https://apk.zhoudw.vip/demo/",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

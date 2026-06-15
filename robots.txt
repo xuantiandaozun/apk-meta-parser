@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /demo/
+Allow: /google67d7170fd2592418.html
+Disallow: /dist/
+Disallow: /src/
+Disallow: /test/
+Disallow: /node_modules/
+Disallow: /.github/
 
 Sitemap: https://apk.zhoudw.vip/sitemap.xml

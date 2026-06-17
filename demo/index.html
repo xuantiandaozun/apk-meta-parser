@@ -487,6 +487,66 @@
         font-size: 13px;
       }
 
+      .icon-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .icon-card {
+        display: grid;
+        gap: 6px;
+        justify-items: center;
+        width: 76px;
+      }
+
+      .icon-preview {
+        display: grid;
+        width: 64px;
+        height: 64px;
+        place-items: center;
+        padding: 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+      }
+
+      .icon-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .icon-preview.is-broken {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .icon-preview.is-broken img {
+        display: none;
+      }
+
+      .icon-fallback {
+        display: none;
+      }
+
+      .icon-preview.is-broken .icon-fallback {
+        display: block;
+      }
+
+      .icon-meta {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
       .empty {
         display: grid;
         min-height: 438px;
@@ -728,6 +788,11 @@
           partialMode: "Partial mode",
           skipIcons: "Skip Icons",
           skipCerts: "Skip Certs",
+          icons: "Icons",
+          iconCount: (count) => `${count} icon(s) extracted`,
+          certificates: "Certificates",
+          certificateCount: (count) => `${count} certificate(s) found`,
+          previewUnavailable: "Preview unavailable",
           ready: "Ready",
           emptyTitle: "No APK selected",
           emptyHint: "Results will appear here after parsing.",
@@ -781,6 +846,11 @@
           partialMode: "部分模式",
           skipIcons: "跳过图标",
           skipCerts: "跳过证书",
+          icons: "图标",
+          iconCount: (count) => `已提取 ${count} 个图标`,
+          certificates: "证书",
+          certificateCount: (count) => `发现 ${count} 个证书`,
+          previewUnavailable: "无法预览",
           ready: "就绪",
           emptyTitle: "未选择 APK",
           emptyHint: "解析后将在此显示结果。",
@@ -837,6 +907,7 @@
       let statusTone = "neutral";
       let statusKey = "ready";
       let statusArg = null;
+      let iconObjectUrls = [];
 
       function t(key, arg) {
         const value = I18N[locale][key];
@@ -943,6 +1014,15 @@
         `;
       }
 
+      function htmlField(label, content) {
+        return `
+          <div class="field">
+            <div class="field-label">${escapeHtml(label)}</div>
+            <div class="field-value">${content}</div>
+          </div>
+        `;
+      }
+
       function permissionField(permissions) {
         const items = Array.isArray(permissions) ? permissions : [];
         const chips = items.length
@@ -959,8 +1039,55 @@
         `;
       }
 
+      function revokeIconObjectUrls() {
+        iconObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+        iconObjectUrls = [];
+      }
+
+      function iconField(icons) {
+        const items = Array.isArray(icons) ? icons.filter((icon) => icon?.iconBlob instanceof Blob) : [];
+        if (!items.length) return "";
+
+        const cards = items
+          .map((icon) => {
+            const url = URL.createObjectURL(icon.iconBlob);
+            iconObjectUrls.push(url);
+            const size = icon.width && icon.height ? `${icon.width}x${icon.height}` : "";
+            const meta = [icon.density, size].filter(Boolean).join(" ") || "-";
+
+            return `
+              <li class="icon-card" title="${escapeHtml(icon.fileName || "")}">
+                <div class="icon-preview">
+                  <img src="${url}" alt="${escapeHtml(meta === "-" ? t("icons") : `${t("icons")} ${meta}`)}" />
+                  <span class="icon-fallback">${escapeHtml(t("previewUnavailable"))}</span>
+                </div>
+                <div class="icon-meta">${escapeHtml(meta)}</div>
+              </li>
+            `;
+          })
+          .join("");
+
+        return htmlField(
+          t("icons"),
+          `<ul class="icon-grid" aria-label="${escapeHtml(t("iconCount", items.length))}">${cards}</ul>`
+        );
+      }
+
+      function bindIconPreviewFallbacks() {
+        result.querySelectorAll(".icon-preview img").forEach((img) => {
+          img.addEventListener(
+            "error",
+            () => {
+              img.parentElement?.classList.add("is-broken");
+            },
+            { once: true }
+          );
+        });
+      }
+
       function renderEmpty() {
         if (currentMeta) return;
+        revokeIconObjectUrls();
         result.innerHTML = `
           <div class="empty">
             <p>
@@ -974,7 +1101,7 @@
       function renderMeta(meta) {
         const iconsCount = meta.icons?.length || 0;
         const certsCount = meta.certificates?.length || 0;
-        
+        revokeIconObjectUrls();
         result.innerHTML = `
           <div class="result-head">
             <h2 class="result-title">${escapeHtml(meta.label || meta.packageName || "APK")}</h2>
@@ -1006,10 +1133,11 @@
             ${field(t("mainActivity"), meta.mainActivity)}
             ${permissionField(meta.permissions)}
             ${field(t("apkMd5"), meta.apkMd5 || t("skipped"))}
-            ${iconsCount > 0 ? field("Icons", `${iconsCount} icon(s) extracted`) : ''}
-            ${certsCount > 0 ? field("Certificates", `${certsCount} certificate(s) found`) : ''}
+            ${certsCount > 0 ? field(t("certificates"), t("certificateCount", certsCount)) : ''}
+            ${iconField(meta.icons)}
           </div>
         `;
+        bindIconPreviewFallbacks();
       }
 
       async function inspectFile(file) {

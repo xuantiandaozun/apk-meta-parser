@@ -14,6 +14,7 @@ export interface ManifestResult {
   permissions: string[];
   activities: string[];
   mainActivity: string;
+  iconResourceId?: number;
 }
 
 const RES_XML_TYPE = 0x0003;
@@ -162,6 +163,14 @@ function processStartElement(
       result.labelResourceId = parseResourceId(raw);
     } else {
       result.label = raw;
+    }
+  }
+
+  // Extract icon resource ID from application tag
+  if (tagName === "application" && attrs.icon) {
+    const raw = String(attrs.icon);
+    if (RESOURCE_ID_RE.test(raw)) {
+      result.iconResourceId = parseResourceId(raw);
     }
   }
 

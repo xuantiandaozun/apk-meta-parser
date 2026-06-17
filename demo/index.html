@@ -661,6 +661,14 @@
               <span data-i18n="partialMode">Partial mode</span>
               <input id="partial" type="checkbox" checked />
             </label>
+            <label class="toggle">
+              <span data-i18n="skipIcons">Skip Icons</span>
+              <input id="skipIcons" type="checkbox" />
+            </label>
+            <label class="toggle">
+              <span data-i18n="skipCerts">Skip Certs</span>
+              <input id="skipCerts" type="checkbox" />
+            </label>
           </div>
 
           <div class="status" id="status" role="status" data-i18n="ready">Ready</div>
@@ -718,6 +726,8 @@
           dropSubtitle: "Package metadata stays local in this browser tab.",
           skipMd5: "Skip MD5",
           partialMode: "Partial mode",
+          skipIcons: "Skip Icons",
+          skipCerts: "Skip Certs",
           ready: "Ready",
           emptyTitle: "No APK selected",
           emptyHint: "Results will appear here after parsing.",
@@ -769,6 +779,8 @@
           dropSubtitle: "包元数据仅在当前浏览器标签页内本地解析。",
           skipMd5: "跳过 MD5",
           partialMode: "部分模式",
+          skipIcons: "跳过图标",
+          skipCerts: "跳过证书",
           ready: "就绪",
           emptyTitle: "未选择 APK",
           emptyHint: "解析后将在此显示结果。",
@@ -802,6 +814,8 @@
       const fileInput = document.querySelector("#fileInput");
       const skipMd5 = document.querySelector("#skipMd5");
       const partial = document.querySelector("#partial");
+      const skipIcons = document.querySelector("#skipIcons");
+      const skipCerts = document.querySelector("#skipCerts");
       const status = document.querySelector("#status");
       const result = document.querySelector("#result");
       const dropPanel = document.querySelector("#dropPanel");
@@ -958,6 +972,9 @@
       }
 
       function renderMeta(meta) {
+        const iconsCount = meta.icons?.length || 0;
+        const certsCount = meta.certificates?.length || 0;
+        
         result.innerHTML = `
           <div class="result-head">
             <h2 class="result-title">${escapeHtml(meta.label || meta.packageName || "APK")}</h2>
@@ -989,6 +1006,8 @@
             ${field(t("mainActivity"), meta.mainActivity)}
             ${permissionField(meta.permissions)}
             ${field(t("apkMd5"), meta.apkMd5 || t("skipped"))}
+            ${iconsCount > 0 ? field("Icons", `${iconsCount} icon(s) extracted`) : ''}
+            ${certsCount > 0 ? field("Certificates", `${certsCount} certificate(s) found`) : ''}
           </div>
         `;
       }
@@ -1002,6 +1021,8 @@
             skipMd5: skipMd5.checked,
             partial: partial.checked,
             locale,
+            skipIcons: skipIcons.checked,
+            skipCertificates: skipCerts.checked,
           });
           currentMeta = meta;
           renderMeta(meta);

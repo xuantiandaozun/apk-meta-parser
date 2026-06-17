@@ -4,6 +4,8 @@ import { parseAndroidBinaryXml } from "./axml/index";
 import { resolveStringResource } from "./arsc";
 import { ApkParseError } from "./errors";
 import type { ApkMeta, ParseOptions } from "./types";
+import { extractApkIcons, createApkIcons } from "./iconExtractor";
+import { parseApkCertificates } from "./certificateParser";
 
 function isZipBuffer(buf: ArrayBuffer): boolean {
   const b = new Uint8Array(buf, 0, 4);
@@ -14,7 +16,14 @@ export async function parseApkMeta(
   file: File | Blob,
   options: ParseOptions = {}
 ): Promise<ApkMeta> {
-  const { skipMd5 = false, partial = false, locale = "en" } = options;
+  const { 
+    skipMd5 = false, 
+    partial = false, 
+    locale = "en",
+    skipIcons = false,
+    skipCertificates = false,
+    maxIcons = 4,
+  } = options;
 
   // Validate ZIP magic number with a cheap 4-byte slice
   const header = await file.slice(0, 4).arrayBuffer();
@@ -50,6 +59,12 @@ export async function parseApkMeta(
   const versionCode = manifest.versionCode || 0;
   let labelIsResourceId = manifest.labelIsResourceId;
   let label = manifest.label;
+  let iconResourceId: number | undefined;
+
+  // Extract icon resource ID from manifest if present
+  if (manifest.iconResourceId !== undefined) {
+    iconResourceId = manifest.iconResourceId;
+  }
 
   if (labelIsResourceId && manifest.labelResourceId !== undefined) {
     const arscEntry = zip.file("resources.arsc");
@@ -73,6 +88,22 @@ export async function parseApkMeta(
     throw new ApkParseError("INCOMPLETE_MANIFEST", locale);
   }
 
+  // Extract icons if not skipped
+  let icons: Awaited<ReturnType<typeof createApkIcons>> = [];
+  if (!skipIcons) {
+    const iconCandidates = await extractApkIcons(zip.files || {}, {
+      maxCount: maxIcons > 0 ? maxIcons : undefined,
+      iconResourceName: iconResourceId ? `0x${iconResourceId.toString(16)}` : undefined,
+    });
+    icons = await createApkIcons(iconCandidates);
+  }
+
+  // Parse certificates if not skipped
+  let certificates: Awaited<ReturnType<typeof parseApkCertificates>> = [];
+  if (!skipCertificates) {
+    certificates = await parseApkCertificates(zip.files || {});
+  }
+
   // MD5 requires full file in memory — skip when caller opts out
   const apkMd5 = skipMd5
     ? ""
@@ -90,5 +121,8 @@ export async function parseApkMeta(
     mainActivity: manifest.mainActivity,
     apkSize: file.size,
     apkMd5,
+    icons,
+    certificates,
+    iconResourceId,
   };
 }
